@@ -1,6 +1,9 @@
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from db import get_db_connection
+try:
+    from db import get_db_connection
+except ImportError:
+    from db.connection import get_db_connection
 
 simulations_bp = Blueprint('simulations', __name__, url_prefix='/api')
 

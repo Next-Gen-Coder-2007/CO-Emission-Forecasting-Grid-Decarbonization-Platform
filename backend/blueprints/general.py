@@ -1,7 +1,11 @@
 from datetime import datetime
 from flask import Blueprint, jsonify
-from db import get_db_connection
-from models_cache import get_loaded_models
+try:
+    from db import get_db_connection
+except ImportError:
+    from db.connection import get_db_connection
+
+from services import get_loaded_models
 
 general_bp = Blueprint('general', __name__)
 

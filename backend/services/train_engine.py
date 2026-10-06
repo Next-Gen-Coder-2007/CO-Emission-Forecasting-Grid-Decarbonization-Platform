@@ -12,8 +12,13 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import DB_PATH, MODEL_DIR, CSV_PATH, BASE_DIR, ROOT_DIR
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(CURRENT_DIR)
+for p in [CURRENT_DIR, BACKEND_DIR, os.path.join(BACKEND_DIR, "core")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from core.config import DB_PATH, MODEL_DIR, CSV_PATH, BASE_DIR, ROOT_DIR
 
 MODEL_CONFIGS = {
     'Ridge Regression': {

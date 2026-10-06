@@ -1,6 +1,7 @@
 import os
 import sqlite3
-from config import DB_PATH, DATABASE_URL
+from core.config import DB_PATH, DATABASE_URL
+
 
 def get_db_connection():
     if DATABASE_URL and not DATABASE_URL.startswith("sqlite"):
@@ -18,7 +19,7 @@ def get_db_connection():
 def ensure_db_initialized():
     if not os.path.exists(DB_PATH):
         try:
-            from init_db import init_database
+            from .init_db import init_database
             init_database()
         except Exception as e:
             print(f"Database auto-initialization error: {e}")

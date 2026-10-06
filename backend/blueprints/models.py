@@ -2,10 +2,20 @@ import os
 import numpy as np
 from flask import Blueprint, jsonify, request
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from db import get_db_connection
-from config import MODEL_DIR
-from models_cache import get_loaded_models, reload_model
-from train_engine import train_model_backend, get_dynamic_charts_data, MODEL_CONFIGS
+try:
+    from db import get_db_connection
+except ImportError:
+    from db.connection import get_db_connection
+
+from core.config import MODEL_DIR
+
+from services import (
+        get_loaded_models,
+        reload_model,
+        train_model_backend,
+        get_dynamic_charts_data,
+        MODEL_CONFIGS
+    )
 
 models_bp = Blueprint('models', __name__, url_prefix='/api')
 

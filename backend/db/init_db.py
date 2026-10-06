@@ -5,8 +5,14 @@ import pandas as pd
 from datetime import datetime
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import DB_PATH, BASE_DIR, ROOT_DIR
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(CURRENT_DIR)
+for p in [CURRENT_DIR, BACKEND_DIR, os.path.join(BACKEND_DIR, "core")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+
+from core.config import DB_PATH, BASE_DIR, DATA_DIR, CSV_PATH
 
 def init_database():
     print(f"Initializing SQLite database at: {DB_PATH}")
@@ -91,13 +97,13 @@ def init_database():
 
     conn.commit()
 
-    csv_path = os.path.join(BASE_DIR, "preprocessed_co2_dataset.csv")
-    if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)
+    target_csv = CSV_PATH if os.path.exists(CSV_PATH) else os.path.join(DATA_DIR, "preprocessed_co2_dataset.csv")
+    if os.path.exists(target_csv):
+        df = pd.read_csv(target_csv)
         cursor.execute("SELECT COUNT(*) FROM emissions_data")
         count = cursor.fetchone()[0]
         if count == 0:
-            print(f"Seeding emissions_data from {csv_path} ({len(df)} rows)...")
+            print(f"Seeding emissions_data from {target_csv} ({len(df)} rows)...")
             for _, row in df.iterrows():
                 cursor.execute("""
                 INSERT INTO emissions_data (
@@ -120,8 +126,8 @@ def init_database():
 
     cursor.execute("SELECT COUNT(*) FROM models_registry")
     if cursor.fetchone()[0] == 0:
-        ml_path = os.path.join(BASE_DIR, "ml_results.csv")
-        dl_path = os.path.join(BASE_DIR, "dl_results.csv")
+        ml_path = os.path.join(DATA_DIR, "ml_results.csv")
+        dl_path = os.path.join(DATA_DIR, "dl_results.csv")
 
         models_data = []
         if os.path.exists(ml_path):
@@ -167,7 +173,7 @@ def init_database():
         conn.commit()
         print(f"Seeded {len(models_data)} models into models_registry.")
 
-    pred_path = os.path.join(BASE_DIR, "predictions_data.json")
+    pred_path = os.path.join(DATA_DIR, "predictions_data.json")
 
     if os.path.exists(pred_path):
         cursor.execute("SELECT COUNT(*) FROM predictions_timeseries")

@@ -1,6 +1,6 @@
 import os
 import joblib
-from config import MODEL_DIR
+from core.config import MODEL_DIR
 
 scaler_X = None
 scaler_y = None

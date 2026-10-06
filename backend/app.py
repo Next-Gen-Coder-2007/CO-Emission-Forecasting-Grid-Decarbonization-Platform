@@ -1,9 +1,23 @@
 import os
+import sys
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+for p in [CURRENT_DIR, os.path.join(CURRENT_DIR, "core"), os.path.join(CURRENT_DIR, "db"), os.path.join(CURRENT_DIR, "services")]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from flask import Flask
 from flask_cors import CORS
-from config import CORS_ORIGINS, PORT, HOST, FLASK_DEBUG
-from db import ensure_db_initialized
-from models_cache import load_trained_models
+
+from core import CORS_ORIGINS, PORT, HOST, FLASK_DEBUG
+
+try:
+    from db import ensure_db_initialized
+except ImportError:
+    from db.connection import ensure_db_initialized
+
+from services import load_trained_models
+
 from blueprints import (
     general_bp,
     models_bp,

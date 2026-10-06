@@ -120,13 +120,27 @@ flowchart TD
 │   └── index.py                     # Vercel serverless WSGI entry point
 │
 ├── backend/                         # Flask REST API Backend
-│   ├── app.py                       # Application factory (create_app)
-│   ├── config.py                    # Centralized path and environment configuration
-│   ├── db.py                        # Database connection & migration engine
-│   ├── models_cache.py              # In-memory model caching & reloader
-│   ├── init_db.py                   # Automated database initializer
-│   ├── train_engine.py              # Dynamic training and hyperparameter tuning engine
+│   ├── app.py                       # Application factory entry point
 │   ├── requirements.txt             # Python backend dependencies
+│   ├── core/                        # Core application configuration
+│   │   ├── __init__.py              # Core package exports
+│   │   └── config.py                # Centralized paths and environment resolution
+│   ├── db/                          # Database connection and schema migrations
+│   │   ├── __init__.py              # Database utilities export
+│   │   ├── connection.py            # Dual-mode SQLite and cloud connection engine
+│   │   ├── init_db.py               # Automated schema migration and table seeder
+│   │   └── co2_forecast.db          # Local SQLite database (gitignored)
+│   ├── data/                        # Cleaned historical and preprocessed datasets
+│   │   ├── cleaned_monthly_sectoral_dataset.csv  # Raw historical EIA records
+│   │   ├── preprocessed_co2_dataset.csv          # 33-feature engineered dataset (510 rows)
+│   │   ├── sample_test_data.csv                  # Holdout test CSV for 1-click evaluation
+│   │   ├── ml_results.csv                        # Classical ML evaluation metrics
+│   │   ├── dl_results.csv                        # Deep Learning evaluation metrics
+│   │   └── predictions_data.json                 # 510-month historical actuals and forecasts
+│   ├── services/                    # Business logic and ML services
+│   │   ├── __init__.py              # Services package exports
+│   │   ├── models_cache.py          # In-memory model caching & reloader
+│   │   └── train_engine.py          # Dynamic training and hyperparameter tuning engine
 │   ├── blueprints/                  # Modular Flask Blueprints
 │   │   ├── __init__.py              # Blueprint package exports
 │   │   ├── general.py               # /api/health, /api/overview, /
@@ -134,24 +148,18 @@ flowchart TD
 │   │   ├── dataset.py               # /api/dataset, /api/dataset/stats, /api/eda
 │   │   ├── inference.py             # /api/test-csv, /api/sample-csv
 │   │   └── simulations.py           # /api/simulate, /api/simulations
-│   ├── models/                      # Serialized ML & DL model artifacts
-│   │   ├── RidgeRegression.pkl      # Trained Ridge model
-│   │   ├── LightGBM.pkl             # Trained LightGBM model
-│   │   ├── XGBoost.pkl              # Trained XGBoost model
-│   │   ├── SVM.pkl                  # Trained SVR model
-│   │   ├── scaler_X.pkl             # Feature RobustScaler
-│   │   ├── scaler_y.pkl             # Target MinMaxScaler
-│   │   ├── feature_names.pkl        # List of 33 engineered features
-│   │   ├── model_lstm.keras         # Trained BiLSTM weights
-│   │   ├── model_gru.keras          # Trained GRU weights
-│   │   ├── model_cnn_lstm.keras     # Trained CNN-LSTM weights
-│   │   └── model_bigru.keras        # Trained BiGRU weights
-│   ├── cleaned_monthly_sectoral_dataset.csv  # Raw cleaned historical EIA records
-│   ├── preprocessed_co2_dataset.csv          # 33-feature engineered dataset (510 rows)
-│   ├── sample_test_data.csv                  # Holdout test CSV for 1-click evaluation
-│   ├── ml_results.csv                        # Classical ML evaluation metrics
-│   ├── dl_results.csv                        # Deep Learning evaluation metrics
-│   └── predictions_data.json                 # 510-month historical actuals and forecasts
+│   └── models/                      # Serialized ML & DL model artifacts
+│       ├── RidgeRegression.pkl      # Trained Ridge model
+│       ├── LightGBM.pkl             # Trained LightGBM model
+│       ├── XGBoost.pkl              # Trained XGBoost model
+│       ├── SVM.pkl                  # Trained SVR model
+│       ├── scaler_X.pkl             # Feature RobustScaler
+│       ├── scaler_y.pkl             # Target MinMaxScaler
+│       ├── feature_names.pkl        # List of 33 engineered features
+│       ├── model_lstm.keras         # Trained BiLSTM weights
+│       ├── model_gru.keras          # Trained GRU weights
+│       ├── model_cnn_lstm.keras     # Trained CNN-LSTM weights
+│       └── model_bigru.keras        # Trained BiGRU weights
 │
 └── frontend/                        # React 19 + Vite Single Page Application
     ├── package.json                 # Node dependencies and build scripts

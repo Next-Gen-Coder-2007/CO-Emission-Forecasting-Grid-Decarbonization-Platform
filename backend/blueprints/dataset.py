@@ -2,8 +2,12 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 from flask import Blueprint, jsonify, request
-from db import get_db_connection
-from config import CSV_PATH
+try:
+    from db import get_db_connection
+except ImportError:
+    from db.connection import get_db_connection
+
+from core.config import CSV_PATH
 
 dataset_bp = Blueprint('dataset', __name__, url_prefix='/api')
 

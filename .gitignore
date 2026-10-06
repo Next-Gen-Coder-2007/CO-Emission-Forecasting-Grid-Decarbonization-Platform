@@ -9,6 +9,9 @@
 backend/*.db
 backend/*.sqlite
 backend/*.sqlite3
+backend/db/*.db
+backend/db/*.sqlite
+backend/db/*.sqlite3
 co2_forecast.db
 
 # Environment Variables

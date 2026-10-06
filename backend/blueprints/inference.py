@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from flask import Blueprint, jsonify, request, send_file
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from config import MODEL_DIR, SAMPLE_CSV_PATH
-from models_cache import get_loaded_models, get_scalers
-from train_engine import MODEL_CONFIGS
+from core.config import MODEL_DIR, SAMPLE_CSV_PATH
+from services import get_loaded_models, get_scalers, MODEL_CONFIGS
+
 
 inference_bp = Blueprint('inference', __name__, url_prefix='/api')
 
