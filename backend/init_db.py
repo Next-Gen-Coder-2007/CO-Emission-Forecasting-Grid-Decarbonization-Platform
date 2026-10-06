@@ -4,33 +4,11 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 
-from dotenv import load_dotenv
+import sys
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
-
-root_env = os.path.join(ROOT_DIR, ".env")
-if os.path.exists(root_env):
-    load_dotenv(root_env)
-else:
-    load_dotenv()
-
-def resolve_path(env_val, default_name):
-    if env_val:
-        if os.path.isabs(env_val):
-            return env_val
-        p1 = os.path.join(ROOT_DIR, env_val)
-        if os.path.exists(p1):
-            return p1
-        p2 = os.path.join(BASE_DIR, env_val)
-        if os.path.exists(p2):
-            return p2
-        p3 = os.path.join(BASE_DIR, os.path.basename(env_val))
-        if os.path.exists(p3):
-            return p3
-    return os.path.join(BASE_DIR, default_name)
-
-DB_PATH = resolve_path(os.getenv("DATABASE_PATH"), "co2_forecast.db")
+# Ensure backend directory is in sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from config import DB_PATH, BASE_DIR, ROOT_DIR
 
 
 
