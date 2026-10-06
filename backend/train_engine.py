@@ -10,14 +10,10 @@ from sklearn.svm import SVR
 import lightgbm as lgb
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
 import sys
 
-# Ensure backend directory is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import DB_PATH, MODEL_DIR, CSV_PATH, BASE_DIR, ROOT_DIR
-
-
 
 MODEL_CONFIGS = {
     'Ridge Regression': {
@@ -170,7 +166,6 @@ def train_model_backend(model_name, hyperparams=None):
         model_obj = Ridge(alpha=float(params['alpha']))
         model_obj.fit(X_train, y_train)
         
-        # Coefficients
         coefs = np.abs(model_obj.coef_)
         sorted_idx = np.argsort(coefs)[::-1][:15]
         for idx in sorted_idx:
@@ -209,7 +204,6 @@ def train_model_backend(model_name, hyperparams=None):
                     'val_loss': round(float(te_losses[ep]), 5)
                 })
 
-        # Feature importances
         imp = model_obj.feature_importances_
         sorted_idx = np.argsort(imp)[::-1][:15]
         for idx in sorted_idx:
@@ -263,8 +257,8 @@ def train_model_backend(model_name, hyperparams=None):
 
     elif model_name in ['LSTM', 'GRU', 'CNN-LSTM', 'Stacked BiGRU']:
         import tensorflow as tf
-        from tensorflow.keras.models import Sequential, Model
-        from tensorflow.keras.layers import LSTM, GRU, Dense, Dropout, Bidirectional, Conv1D, MaxPooling1D, Input, MultiHeadAttention, LayerNormalization, GlobalAveragePooling1D
+        from tensorflow.keras.models import Sequential
+        from tensorflow.keras.layers import LSTM, GRU, Dense, Dropout, Bidirectional, Conv1D, MaxPooling1D
         from tensorflow.keras.optimizers import Adam
 
         seq_len = 12
@@ -275,7 +269,6 @@ def train_model_backend(model_name, hyperparams=None):
                 ys.append(y[i + time_steps])
             return np.array(Xs), np.array(ys)
 
-        # Full features for sequence
         X_all = np.vstack([X_train, X_test])
         y_all = np.concatenate([y_train, y_test])
         X_seq, y_seq = create_sequences(X_all, y_all, seq_len)
@@ -346,19 +339,14 @@ def train_model_backend(model_name, hyperparams=None):
                 'val_loss': round(float(hist.history['val_loss'][ep]), 5)
             })
 
-    # Save model artifact
     save_path = os.path.join(MODEL_DIR, cfg['file'])
     if cfg['type'] == 'dl':
         model_obj.save(save_path)
     else:
         joblib.dump(model_obj, save_path)
 
-    # Compute Predictions and Metrics
     if cfg['type'] == 'dl':
-
-        # For sequence models, align test length
         y_pred_norm_seq = model_obj.predict(X_test_seq).ravel()
-        # pad to match original test length
         pad_len = len(y_test) - len(y_pred_norm_seq)
         if pad_len > 0:
             first_val = y_pred_norm_seq[0]
@@ -368,10 +356,8 @@ def train_model_backend(model_name, hyperparams=None):
     else:
         y_pred_norm = model_obj.predict(X_test)
 
-    # Inverse transform to Real Physical Scale (Million Metric Tons)
     y_pred_mmt = scaler_y.inverse_transform(y_pred_norm.reshape(-1, 1)).ravel()
 
-    # Metrics
     mse_norm = float(mean_squared_error(y_test, y_pred_norm))
     rmse_norm = float(np.sqrt(mse_norm))
     mae_norm = float(mean_absolute_error(y_test, y_pred_norm))
@@ -384,7 +370,6 @@ def train_model_backend(model_name, hyperparams=None):
     residuals_mmt = (y_test_raw_mmt - y_pred_mmt).tolist()
     hist_bins = compute_histogram(residuals_mmt, num_bins=15)
 
-    # Point-by-point holdout predictions
     point_records = []
     for i in range(len(test_dates)):
         act = round(float(y_test_raw_mmt[i]), 2)
@@ -399,12 +384,10 @@ def train_model_backend(model_name, hyperparams=None):
             'pct_error': pct
         })
 
-    # Update SQLite database models_registry and predictions_timeseries
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # Update registry
         cursor.execute("""
         UPDATE models_registry 
         SET r2 = ?, rmse = ?, mae = ?, mse = ?, hyperparameters = ?
@@ -418,7 +401,6 @@ def train_model_backend(model_name, hyperparams=None):
             model_name
         ))
 
-        # Update predictions_timeseries column
         db_col = cfg['db_col']
         cursor.execute("SELECT id FROM predictions_timeseries ORDER BY id ASC")
         ids = [row[0] for row in cursor.fetchall()]
@@ -462,7 +444,6 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
     feature_names = data['feature_names']
     test_dates = data['test_dates']
 
-    # Load all models for timeseries comparison
     loaded_models = {}
     preds_mmt = {}
     for m_name, cfg in MODEL_CONFIGS.items():
@@ -472,7 +453,6 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
                 if cfg['type'] == 'dl':
                     import tensorflow as tf
                     loaded_models[m_name] = tf.keras.models.load_model(m_path)
-                    # Sequences
                     seq_len = 12
                     X_all = np.vstack([data['X_train'], X_test])
                     Xs = []
@@ -493,7 +473,6 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
             except Exception as e:
                 print(f"Chart load error for {m_name}: {e}")
 
-    # Timeseries data
     timeseries = []
     for i in range(len(test_dates)):
         entry = {
@@ -505,12 +484,10 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
                 entry[m_name] = round(float(preds_mmt[m_name][i]), 2)
         timeseries.append(entry)
 
-    # Residuals for selected model
     target_preds = preds_mmt.get(selected_model, preds_mmt.get('Ridge Regression', y_test_raw_mmt))
     residuals_mmt = (y_test_raw_mmt - target_preds).tolist()
     residuals_hist = compute_histogram(residuals_mmt, num_bins=15)
 
-    # Parity scatter data (actual vs predicted)
     parity_points = []
     for i in range(len(test_dates)):
         parity_points.append({
@@ -520,7 +497,6 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
             'residual': round(float(y_test_raw_mmt[i] - target_preds[i]), 2)
         })
 
-    # Feature importances for selected model or Ridge
     feat_imp = []
     target_model_obj = loaded_models.get(selected_model, loaded_models.get('Ridge Regression'))
     if target_model_obj is not None:
@@ -546,4 +522,3 @@ def get_dynamic_charts_data(selected_model='Ridge Regression'):
 if __name__ == '__main__':
     res = train_model_backend('Ridge Regression', {'alpha': 1.0})
     print("Training test result:", json.dumps({k: v for k, v in res.items() if k != 'point_records'}, indent=2))
-

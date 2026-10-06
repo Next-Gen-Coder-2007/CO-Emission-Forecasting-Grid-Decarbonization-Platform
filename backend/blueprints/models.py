@@ -18,7 +18,6 @@ def get_models():
     conn.close()
 
     models = []
-    # Real-scale RMSE/MAE for each model in Million Metric Tons (target range: ~156.16 MMT)
     scale_range = 156.161
 
     for r in rows:
@@ -156,7 +155,6 @@ def train_model_endpoint():
         print(f"Triggering training for {model_name} with params {hyperparams}...")
         train_result = train_model_backend(model_name, hyperparams)
 
-        # Reload trained model into memory
         if model_name in ['Ridge Regression', 'LightGBM', 'XGBoost', 'SVM']:
             reload_model(model_name, MODEL_CONFIGS[model_name]['file'])
 

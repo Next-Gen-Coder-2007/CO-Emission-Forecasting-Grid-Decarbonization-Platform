@@ -8,7 +8,6 @@ feature_names = None
 models_dict = {}
 
 def load_trained_models():
-    """Load trained models, scalers, and metadata once into memory for fast real-time inference"""
     global scaler_X, scaler_y, feature_names, models_dict
     try:
         sx_path = os.path.join(MODEL_DIR, "scaler_X.pkl")

@@ -68,7 +68,6 @@ def get_eda_data():
         csv_path = CSV_PATH
         df = pd.read_csv(csv_path)
 
-        # 1. Target Emission Distribution (Histogram Bins)
         hist_counts, bin_edges = np.histogram(df['Total_CO2'], bins=16)
         target_hist = []
         for i in range(len(hist_counts)):
@@ -79,7 +78,6 @@ def get_eda_data():
                 'count': int(hist_counts[i])
             })
 
-        # Summary statistics
         summary_stats = {
             'count': int(len(df)),
             'mean': round(float(df['Total_CO2'].mean()), 2),
@@ -98,7 +96,6 @@ def get_eda_data():
             'adf_diff_pvalue': 0.0001
         }
 
-        # 2. Inter-fuel correlation matrix
         corr_cols = ['Coal', 'Natural_Gas', 'Petroleum', 'Distillate_Fuel', 'Residual_Fuel_Oil', 'Total_CO2']
         labels = ['Coal Power', 'Natural Gas', 'Petroleum', 'Distillate Oil', 'Residual Fuel', 'Total CO₂']
         corr_df = df[corr_cols].corr().round(3)
@@ -108,7 +105,6 @@ def get_eda_data():
             'values': corr_df.values.tolist()
         }
 
-        # 3. Monthly Seasonality (Months 1-12)
         month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         monthly_agg = df.groupby('Month')['Total_CO2'].agg(['mean', 'std', 'min', 'max']).round(2)
         seasonality = []
@@ -124,7 +120,6 @@ def get_eda_data():
                 'cos': round(float(np.cos(2 * np.pi * m / 12.0)), 3)
             })
 
-        # 4. Long-Term Fuel Time Series Trends (1980-2022)
         historical_trends = []
         for i in range(len(df)):
             historical_trends.append({
@@ -137,7 +132,6 @@ def get_eda_data():
                 'gas_share': round(float(df.iloc[i]['Natural_Gas_Share']) * 100, 1)
             })
 
-        # 5. Autocorrelation Function (ACF) Lags 1 to 12
         acf_data = []
         for k in range(1, 13):
             acf_data.append({
@@ -147,7 +141,6 @@ def get_eda_data():
                 'is_peak': k in [1, 6, 12]
             })
 
-        # 6. Preprocessing: Winsorization Cutoffs & Outliers
         p01 = round(float(np.percentile(df['Total_CO2'], 1)), 2)
         p99 = round(float(np.percentile(df['Total_CO2'], 99)), 2)
         raw_outliers_low = int((df['Total_CO2'] < p01).sum())

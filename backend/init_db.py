@@ -3,21 +3,16 @@ import json
 import sqlite3
 import pandas as pd
 from datetime import datetime
-
 import sys
 
-# Ensure backend directory is in sys.path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import DB_PATH, BASE_DIR, ROOT_DIR
-
-
 
 def init_database():
     print(f"Initializing SQLite database at: {DB_PATH}")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # 1. Create emissions_data table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS emissions_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,7 +43,6 @@ def init_database():
     )
     """)
 
-    # 2. Create models_registry table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS models_registry (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +59,6 @@ def init_database():
     )
     """)
 
-    # 3. Create scenario_simulations table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS scenario_simulations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +75,6 @@ def init_database():
     )
     """)
 
-    # 4. Create predictions_timeseries table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS predictions_timeseries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,7 +91,6 @@ def init_database():
 
     conn.commit()
 
-    # Seed emissions_data from preprocessed_co2_dataset.csv
     csv_path = os.path.join(BASE_DIR, "preprocessed_co2_dataset.csv")
     if os.path.exists(csv_path):
         df = pd.read_csv(csv_path)
@@ -127,13 +118,11 @@ def init_database():
             conn.commit()
             print("Emissions data seeded successfully.")
 
-    # Seed models_registry from ml_results.csv and dl_results.csv
     cursor.execute("SELECT COUNT(*) FROM models_registry")
     if cursor.fetchone()[0] == 0:
         ml_path = os.path.join(BASE_DIR, "ml_results.csv")
         dl_path = os.path.join(BASE_DIR, "dl_results.csv")
 
-        
         models_data = []
         if os.path.exists(ml_path):
             ml_df = pd.read_csv(ml_path)
@@ -178,7 +167,6 @@ def init_database():
         conn.commit()
         print(f"Seeded {len(models_data)} models into models_registry.")
 
-    # Seed predictions_timeseries
     pred_path = os.path.join(BASE_DIR, "predictions_data.json")
 
     if os.path.exists(pred_path):
@@ -212,7 +200,6 @@ def init_database():
             conn.commit()
             print(f"Seeded {len(dates)} prediction series records into SQL.")
 
-    # Seed sample baseline simulations
     cursor.execute("SELECT COUNT(*) FROM scenario_simulations")
     if cursor.fetchone()[0] == 0:
         sample_sims = [

@@ -15,7 +15,6 @@ def simulate_scenario():
     month = int(data.get('month', 7))
     scenario_name = data.get('scenario_name', f"Scenario {datetime.now().strftime('%b %d %H:%M')}")
 
-    # Real model inference if model loaded
     predicted_total = coal + gas + petroleum + residual + distillate + 0.35
 
     delta_baseline = predicted_total - 157.46
@@ -26,7 +25,6 @@ def simulate_scenario():
     else:
         carbon_intensity = "Moderate Carbon Grid"
 
-    # Persist to SQL
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""

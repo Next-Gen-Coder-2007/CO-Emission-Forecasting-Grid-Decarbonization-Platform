@@ -10,13 +10,8 @@ from train_engine import MODEL_CONFIGS
 inference_bp = Blueprint('inference', __name__, url_prefix='/api')
 
 def transform_raw_to_features(df_input, feature_names):
-    """
-    Transforms any uploaded raw or partially engineered CSV into the exact 33 features
-    expected by the trained models.
-    """
     df = df_input.copy()
     
-    # Standardize column headers
     col_map = {
         'Date': 'Date',
         'Coal Electric Power Sector CO2 Emissions': 'Coal',
@@ -31,26 +26,22 @@ def transform_raw_to_features(df_input, feature_names):
     }
     df.rename(columns={k: v for k, v in col_map.items() if k in df.columns}, inplace=True)
     
-    # Handle missing values
     for c in ['Coal', 'Distillate_Fuel', 'Geothermal', 'Natural_Gas', 'Non_Biomass_Waste', 'Petroleum_Coke', 'Petroleum', 'Residual_Fuel_Oil']:
         if c not in df.columns:
             df[c] = 0.0
         df[c] = pd.to_numeric(df[c], errors='coerce').fillna(0.0)
 
-    # Date handling
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     else:
         df['Date'] = pd.date_range(start='2020-01-01', periods=len(df), freq='MS')
 
-    # Target estimate if Total_CO2 not provided
     has_ground_truth = 'Total_CO2' in df.columns
     if not has_ground_truth:
         df['Total_CO2'] = df['Coal'] + df['Natural_Gas'] + df['Petroleum'] + df['Residual_Fuel_Oil'] + df['Distillate_Fuel'] + 0.35
     else:
         df['Total_CO2'] = pd.to_numeric(df['Total_CO2'], errors='coerce').fillna(df['Coal'] + df['Natural_Gas'] + df['Petroleum'])
 
-    # Temporal & Cyclical
     df['Year'] = df['Date'].dt.year.fillna(2020).astype(int)
     df['Month'] = df['Date'].dt.month.fillna(6).astype(int)
     df['Quarter'] = df['Date'].dt.quarter.fillna(2).astype(int)
@@ -58,7 +49,6 @@ def transform_raw_to_features(df_input, feature_names):
     df['Month_Sin'] = np.sin(2 * np.pi * df['Month'] / 12.0)
     df['Month_Cos'] = np.cos(2 * np.pi * df['Month'] / 12.0)
 
-    # Autoregressive Lags & Rolling (ffill/bfill for single rows or small batches)
     df['Lag_1'] = df['Total_CO2'].shift(1).bfill().ffill()
     df['Lag_2'] = df['Total_CO2'].shift(2).bfill().ffill()
     df['Lag_3'] = df['Total_CO2'].shift(3).bfill().ffill()
@@ -76,14 +66,12 @@ def transform_raw_to_features(df_input, feature_names):
     df['EMA_3'] = df['Total_CO2'].ewm(span=3, adjust=False).mean()
     df['EMA_6'] = df['Total_CO2'].ewm(span=6, adjust=False).mean()
 
-    # Shares & Differences
     df['Coal_Share'] = df['Coal'] / (df['Total_CO2'] + 1e-5)
     df['Natural_Gas_Share'] = df['Natural_Gas'] / (df['Total_CO2'] + 1e-5)
     df['Petroleum_Share'] = df['Petroleum'] / (df['Total_CO2'] + 1e-5)
     df['Diff_1'] = (df['Total_CO2'] - df['Lag_1']).fillna(0.0)
     df['Diff_12'] = (df['Total_CO2'] - df['Lag_12']).fillna(0.0)
 
-    # Ensure all expected feature columns exist
     if feature_names:
         for fn in feature_names:
             if fn not in df.columns:
@@ -101,7 +89,6 @@ def test_csv_inference():
         if model_name not in MODEL_CONFIGS and model_name not in models_dict:
             model_name = 'Ridge Regression'
 
-        # Check if CSV file uploaded or JSON payload provided
         if 'file' in request.files:
             uploaded_file = request.files['file']
             if uploaded_file.filename == '':
@@ -116,13 +103,10 @@ def test_csv_inference():
         if df_raw.empty:
             return jsonify({'error': 'Uploaded data is empty'}), 400
 
-        # Transform raw columns to model feature space
         df_processed, has_ground_truth = transform_raw_to_features(df_raw, feature_names)
 
-        # Scale features
         X_input = scaler_X.transform(df_processed[feature_names].values)
 
-        # Run real model prediction (ML vs DL architectures)
         if model_name in ['LSTM', 'GRU', 'CNN-LSTM', 'Stacked BiGRU']:
             import tensorflow as tf
             keras_file = MODEL_CONFIGS[model_name]['file']
@@ -184,7 +168,6 @@ def test_csv_inference():
 
             results_list.append(item)
 
-        # Compute physical metrics if ground truth was present
         computed_metrics = None
         if has_ground_truth and len(actuals_list) > 1:
             mse_val = float(mean_squared_error(actuals_list, preds_list))
@@ -213,7 +196,6 @@ def test_csv_inference():
 
 @inference_bp.route('/sample-csv', methods=['GET'])
 def get_sample_csv():
-    """Returns sample test data in CSV format for instant 1-click user testing"""
     if os.path.exists(SAMPLE_CSV_PATH):
         return send_file(SAMPLE_CSV_PATH, mimetype='text/csv', as_attachment=True, download_name='sample_co2_test_data.csv')
     return jsonify({'error': 'Sample file not found'}), 404
