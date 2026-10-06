@@ -1,0 +1,5 @@
+Model,MSE,RMSE,MAE,R2,Best_Params
+Ridge Regression,9e-06,0.003031,0.001371,0.999664,"{'alpha': 0.001, 'solver': 'lsqr'}"
+LightGBM,0.003264,0.057129,0.043253,0.880688,"{'colsample_bytree': 1.0, 'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 300, 'num_leaves': 15, 'reg_alpha': 0.0, 'reg_lambda': 0.0, 'subsample': 0.8}"
+XGBoost,0.003771,0.061407,0.048156,0.862148,"{'colsample_bytree': 1.0, 'gamma': 0.0, 'learning_rate': 0.1, 'max_depth': 6, 'n_estimators': 200, 'subsample': 0.8}"
+SVM,0.001386,0.037225,0.020803,0.949342,"{'C': 5.0, 'epsilon': 0.005, 'gamma': 0.01, 'kernel': 'rbf'}"
